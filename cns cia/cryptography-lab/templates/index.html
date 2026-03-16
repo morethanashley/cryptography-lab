@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Cryptography Interactive Learning Lab{% endblock %}
+{% block heading %}🏠 Home{% endblock %}
+{% block content %}
+
+<div class="hero">
+  <div class="hero-emoji">🔐</div>
+  <h1>Cryptography <span class="grad">Interactive</span> Learning Lab</h1>
+  <p>Explore 12 classical and modern cryptography algorithms. Encrypt, decrypt, and get step-by-step explanations of every transformation — built for students.</p>
+  <div class="hero-stats">
+    <span class="hero-stat badge-classical">🏛️ 6 Classical Ciphers</span>
+    <span class="hero-stat badge-modern">⚡ 2 Modern Symmetric</span>
+    <span class="hero-stat badge-asymmetric">🔑 4 Asymmetric / Key Exchange</span>
+  </div>
+</div>
+
+<div style="margin-bottom:14px;font-size:13px;color:var(--text2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase">
+  🏛️ Classical Ciphers
+</div>
+<div class="algo-grid" style="margin-bottom:28px">
+  {% for a in algos[:6] %}
+  <a href="/algo/{{a.id}}" class="algo-card">
+    <div class="icon">{{a.icon}}</div>
+    <div class="name">{{a.name}}</div>
+    <span class="badge badge-classical">Classical</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div style="margin-bottom:14px;font-size:13px;color:var(--text2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase">
+  ⚡ Modern &amp; Asymmetric
+</div>
+<div class="algo-grid">
+  {% for a in algos[6:] %}
+  <a href="/algo/{{a.id}}" class="algo-card">
+    <div class="icon">{{a.icon}}</div>
+    <div class="name">{{a.name}}</div>
+    <span class="badge badge-{{a.type|lower}}">{{a.type}}</span>
+  </a>
+  {% endfor %}
+</div>
+
+{% endblock %}

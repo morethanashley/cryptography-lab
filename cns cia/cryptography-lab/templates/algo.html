@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+{% block title %}
+  {% for a in algos %}{% if a.id == page %}{{a.name}}{% endif %}{% endfor %}
+{% endblock %}
+{% block heading %}
+  {% for a in algos %}{% if a.id == page %}{{a.icon}} {{a.name}}{% endif %}{% endfor %}
+{% endblock %}
+{% block content %}
+
+{# ── ALGO META ─────────────────────────────────────────────────────────────── #}
+{% set meta = {
+  "caesar":   {"what":"A substitution cipher that shifts every letter by a fixed number in the alphabet. One of the oldest known ciphers, used by Julius Caesar.",
+               "how":["Choose a shift value (key) between 1–25","For each letter, move it forward (encrypt) or backward (decrypt) by the shift","Non-alphabetic characters stay unchanged"],
+               "uses":["Historical military communications","Simple obfuscation","Teaching cryptography basics"],
+               "badge":"Classical"},
+  "vigenere": {"what":"A polyalphabetic cipher using a keyword. Each letter is shifted by the corresponding keyword letter, making frequency analysis harder than Caesar.",
+               "how":["Choose a keyword (e.g. KEY)","Repeat the keyword to match plaintext length","Shift each letter by its corresponding keyword letter's position"],
+               "uses":["Historical diplomatic messages","Stronger than Caesar for short texts","Basis for modern stream ciphers"],
+               "badge":"Classical"},
+  "hill":     {"what":"A polygraphic cipher using matrix multiplication over mod 26. Encrypts blocks of letters simultaneously using linear algebra.",
+               "how":["Choose an n×n invertible key matrix","Convert text blocks to numeric vectors","Multiply key matrix × vector mod 26"],
+               "uses":["Academic cryptography education","Demonstrates linear algebra in crypto","Foundation for modern block ciphers"],
+               "badge":"Classical"},
+  "playfair": {"what":"A digraph substitution cipher using a 5×5 key matrix. Encrypts pairs of letters, making single-letter frequency analysis ineffective.",
+               "how":["Build 5×5 matrix from keyword (I=J)","Split plaintext into letter pairs","Apply row/column/rectangle rules to each pair"],
+               "uses":["WWI British military communications","Stronger than monoalphabetic ciphers","Teaching digraph substitution"],
+               "badge":"Classical"},
+  "railfence":{"what":"A transposition cipher that writes text in a zigzag pattern across a number of 'rails', then reads off each rail in order.",
+               "how":["Choose number of rails","Write text diagonally up and down across rails","Read each rail left-to-right to get ciphertext"],
+               "uses":["Simple message scrambling","Teaching transposition concepts","Combined with substitution for stronger ciphers"],
+               "badge":"Classical"},
+  "rowcolumn":{"what":"A transposition cipher that fills a grid row-by-row, then reads columns in the order determined by alphabetically sorting the key.",
+               "how":["Write plaintext into a grid (cols = key length)","Sort key letters alphabetically to get column order","Read columns in that order to produce ciphertext"],
+               "uses":["WWII field ciphers","Teaching columnar transposition","Combined with substitution ciphers"],
+               "badge":"Classical"},
+  "des":      {"what":"Data Encryption Standard — a symmetric block cipher using 64-bit blocks and a 56-bit key with 16 Feistel rounds. Now considered insecure due to short key length.",
+               "how":["Apply Initial Permutation (IP) to 64-bit block","Split into L and R halves","Run 16 Feistel rounds with derived subkeys","Apply Final Permutation (IP⁻¹)"],
+               "uses":["Legacy banking systems","ATM PIN encryption (historically)","Teaching Feistel network design"],
+               "badge":"Modern"},
+  "aes":      {"what":"Advanced Encryption Standard — the current global standard for symmetric encryption. Uses 128-bit blocks with 10/12/14 rounds depending on key size.",
+               "how":["Arrange plaintext into 4×4 byte state matrix","Each round: SubBytes → ShiftRows → MixColumns → AddRoundKey","Final round skips MixColumns"],
+               "uses":["HTTPS/TLS encryption","File and disk encryption","Wi-Fi (WPA2/WPA3)","Government classified data"],
+               "badge":"Modern"},
+  "rsa":      {"what":"Rivest–Shamir–Adleman — the most widely used asymmetric cipher. Security relies on the difficulty of factoring the product of two large primes.",
+               "how":["Choose two large primes p and q","Compute n=p×q and φ(n)=(p-1)(q-1)","Choose public exponent e; compute private key d","Encrypt: C = M^e mod n  |  Decrypt: M = C^d mod n"],
+               "uses":["HTTPS certificates (TLS/SSL)","Email encryption (PGP)","Digital signatures","Secure key exchange"],
+               "badge":"Asymmetric"},
+  "dh":       {"what":"Diffie-Hellman Key Exchange — allows two parties to establish a shared secret over a public channel without ever transmitting the secret itself.",
+               "how":["Agree on public prime p and generator g","Each party picks a private key and computes a public key","Exchange public keys","Each computes the same shared secret independently"],
+               "uses":["TLS/HTTPS handshake","SSH key exchange","VPN protocols (IPSec)","Signal Protocol (messaging)"],
+               "badge":"Asymmetric"},
+  "elgamal":  {"what":"ElGamal cryptosystem — an asymmetric cipher based on Diffie-Hellman. Each encryption is randomized, producing different ciphertexts for the same plaintext.",
+               "how":["Choose prime p, generator g, private key x","Public key y = g^x mod p","Encrypt: pick random k, send (c1=g^k, c2=M×y^k)","Decrypt: M = c2 × (c1^x)^(-1) mod p"],
+               "uses":["GNU Privacy Guard (GPG)","Digital signatures (DSA variant)","Academic cryptography research"],
+               "badge":"Asymmetric"},
+  "ecc":      {"what":"Elliptic Curve Cryptography — uses points on an elliptic curve y²=x³+ax+b over a finite field. Provides equivalent security to RSA with much smaller keys.",
+               "how":["Define curve parameters a, b, p and generator point G","Each party picks a private scalar k","Public key = k × G (point multiplication)","Shared secret = alice_k × BobPublic = bob_k × AlicePublic"],
+               "uses":["Bitcoin/Ethereum wallets","TLS 1.3 (ECDHE)","Apple Secure Enclave","Modern SSH keys (Ed25519)"],
+               "badge":"Asymmetric"}
+} %}
+
+{% set m = meta[page] %}
+
+{# ── INFO CARD ─────────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-title">
+    {% for a in algos %}{% if a.id == page %}{{a.icon}} {{a.name}}{% endif %}{% endfor %}
+    <span class="badge badge-{{m.badge|lower}}" style="margin-left:auto">{{m.badge}}</span>
+  </div>
+  <div class="info-tabs" id="info">
+    <button class="tab-btn active" onclick="showTab('info','what')">📖 What is it?</button>
+    <button class="tab-btn" onclick="showTab('info','how')">⚙️ How it works</button>
+    <button class="tab-btn" onclick="showTab('info','uses')">🌍 Real-world uses</button>
+  </div>
+  <div id="info-what" class="tab-panel active">{{m.what}}</div>
+  <div id="info-how" class="tab-panel">
+    <div class="how-list">
+      {% for step in m.how %}
+      <div class="how-item"><div class="how-num">{{loop.index}}</div><div>{{step}}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+  <div id="info-uses" class="tab-panel">
+    <div class="tag-row">{% for u in m.uses %}<span class="tag">{{u}}</span>{% endfor %}</div>
+  </div>
+</div>
+
+{# ── FORM CARD ─────────────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-title">🔧 Interactive Tool</div>
+
+  {# CAESAR #}
+  {% if page == "caesar" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'HELLO WORLD'}}" required></div>
+      <div class="form-group"><label>Shift (0–25)</label>
+        <input name="shift" type="number" min="0" max="25" value="{{form.shift or 3}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# VIGENERE #}
+  {% elif page == "vigenere" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'HELLO WORLD'}}" required></div>
+      <div class="form-group"><label>Keyword</label>
+        <input name="key" value="{{form.key or 'KEY'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# HILL #}
+  {% elif page == "hill" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'ACT'}}" required></div>
+      <div class="form-group"><label>Key Matrix (comma-separated, e.g. 6,24,1,13 for 2×2)</label>
+        <input name="key" value="{{form.key or '6,24,1,13'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# PLAYFAIR #}
+  {% elif page == "playfair" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'HELLO'}}" required></div>
+      <div class="form-group"><label>Keyword</label>
+        <input name="key" value="{{form.key or 'MONARCHY'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# RAIL FENCE #}
+  {% elif page == "railfence" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'WEAREDISCOVEREDRUNATONCE'}}" required></div>
+      <div class="form-group"><label>Number of Rails</label>
+        <input name="rails" type="number" min="2" max="10" value="{{form.rails or 3}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# ROW-COLUMN #}
+  {% elif page == "rowcolumn" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext / Ciphertext</label>
+        <input name="text" value="{{form.text or 'WEAREDISCOVERED'}}" required></div>
+      <div class="form-group"><label>Key (letters determine column order)</label>
+        <input name="key" value="{{form.key or 'ZEBRAS'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt</button>
+    </div>
+  </form>
+
+  {# DES #}
+  {% elif page == "des" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext (up to 8 chars)</label>
+        <input name="text" value="{{form.text or 'HELLO'}}" required></div>
+      <div class="form-group"><label>Key (up to 8 chars)</label>
+        <input name="key" value="{{form.key or 'SECRETKY'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt (Demo)</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt (Overview)</button>
+    </div>
+  </form>
+
+  {# AES #}
+  {% elif page == "aes" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Plaintext (up to 16 chars)</label>
+        <input name="text" value="{{form.text or 'Hello AES World!'}}" required></div>
+      <div class="form-group"><label>Key (up to 16 chars)</label>
+        <input name="key" value="{{form.key or 'mysecretkey12345'}}" required></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" name="op" value="encrypt">🔒 Encrypt (Demo)</button>
+      <button class="btn btn-success" name="op" value="decrypt">🔓 Decrypt (Overview)</button>
+    </div>
+  </form>
+
+  {# RSA #}
+  {% elif page == "rsa" %}
+  <div class="info-tabs" id="rsa-tabs">
+    <button class="tab-btn active" onclick="showTab('rsa-tabs','gen')">🔑 Generate Keys</button>
+    <button class="tab-btn" onclick="showTab('rsa-tabs','enc')">🔒 Encrypt</button>
+    <button class="tab-btn" onclick="showTab('rsa-tabs','dec')">🔓 Decrypt</button>
+  </div>
+  <div id="rsa-tabs-gen" class="tab-panel active">
+    <form method="POST">
+      <input type="hidden" name="action" value="generate">
+      <div class="grid2">
+        <div class="form-group"><label>Prime p</label><input name="p" value="{{form.p or 61}}" required></div>
+        <div class="form-group"><label>Prime q</label><input name="q" value="{{form.q or 53}}" required></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">⚙️ Generate Keys</button></div>
+    </form>
+  </div>
+  <div id="rsa-tabs-enc" class="tab-panel">
+    <form method="POST">
+      <input type="hidden" name="action" value="encrypt">
+      <div class="form-group"><label>Message</label><input name="text" value="{{form.text or 'Hi'}}" required></div>
+      <div class="grid2">
+        <div class="form-group"><label>Public Exponent e</label><input name="e" value="{{form.e or data.e or 17}}" required></div>
+        <div class="form-group"><label>Modulus n</label><input name="n" value="{{form.n or data.n or 3233}}" required></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">🔒 Encrypt</button></div>
+    </form>
+  </div>
+  <div id="rsa-tabs-dec" class="tab-panel">
+    <form method="POST">
+      <input type="hidden" name="action" value="decrypt">
+      <div class="form-group"><label>Ciphertext (space-separated numbers)</label>
+        <input name="text" value="{{form.text or result or ''}}" required></div>
+      <div class="grid2">
+        <div class="form-group"><label>Private Key d</label><input name="d" value="{{form.d or data.d or 2753}}" required></div>
+        <div class="form-group"><label>Modulus n</label><input name="n" value="{{form.n or data.n or 3233}}" required></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-success">🔓 Decrypt</button></div>
+    </form>
+  </div>
+
+  {# DIFFIE-HELLMAN #}
+  {% elif page == "dh" %}
+  <form method="POST">
+    <div class="grid2">
+      <div class="form-group"><label>Prime p (public)</label><input name="p" value="{{form.p or 23}}" required></div>
+      <div class="form-group"><label>Generator g (public)</label><input name="g" value="{{form.g or 5}}" required></div>
+      <div class="form-group"><label>Alice's Private Key</label><input name="alice" value="{{form.alice or 6}}" required></div>
+      <div class="form-group"><label>Bob's Private Key</label><input name="bob" value="{{form.bob or 15}}" required></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary">🤝 Simulate Key Exchange</button></div>
+  </form>
+
+  {# ELGAMAL #}
+  {% elif page == "elgamal" %}
+  <div class="info-tabs" id="eg-tabs">
+    <button class="tab-btn active" onclick="showTab('eg-tabs','gen')">🔑 Generate Keys</button>
+    <button class="tab-btn" onclick="showTab('eg-tabs','enc')">🔒 Encrypt</button>
+    <button class="tab-btn" onclick="showTab('eg-tabs','dec')">🔓 Decrypt</button>
+  </div>
+  <div id="eg-tabs-gen" class="tab-panel active">
+    <form method="POST">
+      <input type="hidden" name="action" value="generate">
+      <div class="grid2">
+        <div class="form-group"><label>Prime p</label><input name="p" value="{{form.p or 23}}" required></div>
+        <div class="form-group"><label>Generator g</label><input name="g" value="{{form.g or 5}}" required></div>
+        <div class="form-group"><label>Private key x (optional)</label><input name="x" value="{{form.x or 6}}"></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">⚙️ Generate Keys</button></div>
+    </form>
+  </div>
+  <div id="eg-tabs-enc" class="tab-panel">
+    <form method="POST">
+      <input type="hidden" name="action" value="encrypt">
+      <div class="form-group"><label>Message</label><input name="text" value="{{form.text or 'Hi'}}" required></div>
+      <div class="grid2">
+        <div class="form-group"><label>Prime p</label><input name="p" value="{{form.p or data.p or 23}}" required></div>
+        <div class="form-group"><label>Generator g</label><input name="g" value="{{form.g or data.g or 5}}" required></div>
+        <div class="form-group"><label>Public key y</label><input name="y" value="{{form.y or data.public_key or 8}}" required></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">🔒 Encrypt</button></div>
+    </form>
+  </div>
+  <div id="eg-tabs-dec" class="tab-panel">
+    <form method="POST">
+      <input type="hidden" name="action" value="decrypt">
+      <div class="form-group"><label>Encrypted pairs (JSON from encrypt step)</label>
+        <textarea name="pairs" rows="3">{{form.pairs or '[]'}}</textarea></div>
+      <div class="grid2">
+        <div class="form-group"><label>Prime p</label><input name="p" value="{{form.p or data.p or 23}}" required></div>
+        <div class="form-group"><label>Private key x</label><input name="x" value="{{form.x or data.private_key or 6}}" required></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-success">🔓 Decrypt</button></div>
+    </form>
+  </div>
+
+  {# ECC #}
+  {% elif page == "ecc" %}
+  <form method="POST">
+    <div class="grid3">
+      <div class="form-group"><label>Curve a</label><input name="a" value="{{form.a or 2}}" required></div>
+      <div class="form-group"><label>Curve b</label><input name="b" value="{{form.b or 2}}" required></div>
+      <div class="form-group"><label>Prime p</label><input name="p" value="{{form.p or 17}}" required></div>
+      <div class="form-group"><label>Generator Gx</label><input name="gx" value="{{form.gx or 5}}" required></div>
+      <div class="form-group"><label>Generator Gy</label><input name="gy" value="{{form.gy or 1}}" required></div>
+    </div>
+    <div class="grid2">
+      <div class="form-group"><label>Alice's Private Key</label><input name="alice_k" value="{{form.alice_k or 2}}" required></div>
+      <div class="form-group"><label>Bob's Private Key</label><input name="bob_k" value="{{form.bob_k or 3}}" required></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary">📈 Simulate ECC Key Exchange</button></div>
+  </form>
+  {% endif %}
+
+  {# ERROR #}
+  {% if error %}
+  <div class="error-box">⚠️ {{error}}</div>
+  {% endif %}
+
+  {# RESULT #}
+  {% if result %}
+  <div class="result-box">
+    <div class="result-label">✅ Result</div>
+    <div class="result-value">{{result}}</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── RSA KEY DISPLAY ───────────────────────────────────────────────────────── #}
+{% if page == "rsa" and data and data.public_key %}
+<div class="card">
+  <div class="card-title">🔑 Generated RSA Keys</div>
+  <div class="grid2">
+    <div class="sim-party alice">
+      <h4>Public Key</h4>
+      <div class="kv"><span class="kv-k">e (exponent)</span><span class="kv-v">{{data.e}}</span></div>
+      <div class="kv"><span class="kv-k">n (modulus)</span><span class="kv-v">{{data.n}}</span></div>
+    </div>
+    <div class="sim-party bob">
+      <h4>Private Key</h4>
+      <div class="kv"><span class="kv-k">d (exponent)</span><span class="kv-v">{{data.d}}</span></div>
+      <div class="kv"><span class="kv-k">n (modulus)</span><span class="kv-v">{{data.n}}</span></div>
+    </div>
+  </div>
+  <div style="margin-top:12px;font-size:12px;color:var(--text2)">
+    p={{data.p}}, q={{data.q}}, φ(n)={{data.phi}}
+  </div>
+</div>
+{% endif %}
+
+{# ── ELGAMAL KEY DISPLAY ───────────────────────────────────────────────────── #}
+{% if page == "elgamal" and data and data.public_key %}
+<div class="card">
+  <div class="card-title">🔑 ElGamal Keys</div>
+  <div class="grid2">
+    <div class="sim-party alice">
+      <h4>Public Key</h4>
+      <div class="kv"><span class="kv-k">p</span><span class="kv-v">{{data.p}}</span></div>
+      <div class="kv"><span class="kv-k">g</span><span class="kv-v">{{data.g}}</span></div>
+      <div class="kv"><span class="kv-k">y = g^x mod p</span><span class="kv-v">{{data.public_key}}</span></div>
+    </div>
+    <div class="sim-party bob">
+      <h4>Private Key</h4>
+      <div class="kv"><span class="kv-k">x</span><span class="kv-v">{{data.private_key}}</span></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── ELGAMAL ENCRYPTED PAIRS ───────────────────────────────────────────────── #}
+{% if page == "elgamal" and data and data.encrypted_pairs %}
+<div class="card">
+  <div class="card-title">📦 Encrypted Pairs (copy for decryption)</div>
+  <div style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:12px;border-radius:8px;word-break:break-all;color:var(--cyan)">
+    {{data.encrypted_pairs | tojson}}
+  </div>
+</div>
+{% endif %}
+
+{# ── DH SIM BOXES ──────────────────────────────────────────────────────────── #}
+{% if page == "dh" and data and data.shared_secret %}
+<div class="card">
+  <div class="card-title">🤝 Key Exchange Simulation</div>
+  <div class="sim-grid">
+    <div class="sim-party alice">
+      <h4>👩 Alice</h4>
+      <div class="kv"><span class="kv-k">Private key a</span><span class="kv-v">{{data.alice_private}}</span></div>
+      <div class="kv"><span class="kv-k">Public key A = g^a mod p</span><span class="kv-v">{{data.alice_public}}</span></div>
+    </div>
+    <div class="sim-arrow">
+      <span>A →</span><span style="font-size:18px">⇄</span><span>← B</span>
+    </div>
+    <div class="sim-party bob">
+      <h4>👨 Bob</h4>
+      <div class="kv"><span class="kv-k">Private key b</span><span class="kv-v">{{data.bob_private}}</span></div>
+      <div class="kv"><span class="kv-k">Public key B = g^b mod p</span><span class="kv-v">{{data.bob_public}}</span></div>
+    </div>
+  </div>
+  <div class="secret-box">
+    <div class="lbl">🔐 Shared Secret (both computed independently)</div>
+    <div class="val">{{data.shared_secret}}</div>
+  </div>
+</div>
+{% endif %}
+
+{# ── ECC SIM BOXES ─────────────────────────────────────────────────────────── #}
+{% if page == "ecc" and data and data.shared_secret_alice %}
+<div class="card">
+  <div class="card-title">📈 ECC Key Exchange</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Curve: {{data.curve.equation}}</div>
+  <div class="sim-grid">
+    <div class="sim-party alice">
+      <h4>👩 Alice</h4>
+      <div class="kv"><span class="kv-k">Private k</span><span class="kv-v">{{data.alice_private}}</span></div>
+      <div class="kv"><span class="kv-k">Public A = k×G</span><span class="kv-v">{{data.alice_public}}</span></div>
+    </div>
+    <div class="sim-arrow"><span>A →</span><span style="font-size:18px">⇄</span><span>← B</span></div>
+    <div class="sim-party bob">
+      <h4>👨 Bob</h4>
+      <div class="kv"><span class="kv-k">Private k</span><span class="kv-v">{{data.bob_private}}</span></div>
+      <div class="kv"><span class="kv-k">Public B = k×G</span><span class="kv-v">{{data.bob_public}}</span></div>
+    </div>
+  </div>
+  <div class="secret-box">
+    <div class="lbl">🔐 Shared Secret Point</div>
+    <div class="val">{{data.shared_secret_alice}}</div>
+  </div>
+  {% if data.curve_points %}
+  <div style="margin-top:16px">
+    <div class="card-title" style="font-size:12px;margin-bottom:8px">Curve Points (y²=x³+{{data.curve.a}}x+{{data.curve.b}} mod {{data.curve.p}})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      {% for pt in data.curve_points %}
+      <span style="font-family:var(--mono);font-size:11px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--indigo2)">({{pt.x}},{{pt.y}})</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── VISUALIZATIONS ────────────────────────────────────────────────────────── #}
+{% if data and result %}
+
+{# CAESAR: alphabet strip #}
+{% if page == "caesar" and data.shift is defined %}
+<div class="card">
+  <div class="card-title">🔤 Alphabet Shift Visualization (shift = {{data.shift}})</div>
+  <div style="margin-bottom:8px;font-size:12px;color:var(--text2)">Original alphabet:</div>
+  <div class="alpha-strip">
+    {% for i in range(26) %}
+    <div class="alpha-char">{{['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][i]}}</div>
+    {% endfor %}
+  </div>
+  <div style="margin:8px 0;font-size:12px;color:var(--text2)">Shifted by {{data.shift}}:</div>
+  <div class="alpha-strip">
+    {% for i in range(26) %}
+    {% set shifted = (i + data.shift) % 26 %}
+    <div class="alpha-char shifted">{{['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'][shifted]}}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# HILL: key matrix #}
+{% if page == "hill" and data.key_matrix %}
+<div class="card">
+  <div class="card-title">🔢 Key Matrix</div>
+  <div class="matrix-wrap">
+    {% for row in data.key_matrix %}
+    <div class="matrix-row">
+      {% for val in row %}<div class="matrix-cell">{{val}}</div>{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if data.inv_matrix %}
+  <div style="margin-top:12px;font-size:12px;color:var(--text2)">Inverse matrix (mod 26):</div>
+  <div class="matrix-wrap" style="margin-top:6px">
+    {% for row in data.inv_matrix %}
+    <div class="matrix-row">
+      {% for val in row %}<div class="matrix-cell hi">{{val}}</div>{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# PLAYFAIR: 5x5 grid #}
+{% if page == "playfair" and data.matrix %}
+<div class="card">
+  <div class="card-title">🎯 Playfair 5×5 Matrix</div>
+  <div class="pf-grid">
+    {% for row in data.matrix %}{% for ch in row %}
+    <div class="pf-cell">{{ch}}</div>
+    {% endfor %}{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# RAIL FENCE: zigzag viz #}
+{% if page == "railfence" and data.positions %}
+<div class="card">
+  <div class="card-title">🚂 Rail Fence Zigzag Visualization</div>
+  <div class="rail-viz">
+    {% for r in range(data.rails) %}
+    <div class="rail-row">
+      <span class="rail-label">Rail {{r+1}}:</span>
+      {% for pos in data.positions %}
+      {% if pos[0] == r %}
+      <div class="rail-char on">{{pos[2]}}</div>
+      {% else %}
+      <div class="rail-char off">·</div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ROW-COLUMN: grid #}
+{% if page == "rowcolumn" and data.grid %}
+<div class="card">
+  <div class="card-title">📊 Transposition Grid</div>
+  <div style="overflow-x:auto">
+    <table class="char-table">
+      <thead><tr>
+        {% for ch in data.key %}<th>{{ch}}</th>{% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for row in data.grid %}
+        <tr>{% for cell in row %}<td>{{cell}}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:var(--text2)">
+    Column read order: {% for i in data.column_order %}{{i+1}}{% if not loop.last %} → {% endif %}{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# AES: state matrix steps #}
+{% if page == "aes" and data.steps %}
+<div class="card">
+  <div class="card-title">🛡️ AES State Matrix Progression</div>
+  {% for s in data.steps %}
+  {% if s.state %}
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;color:var(--indigo2);margin-bottom:6px">{{s.step}}</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">{{s.description}}</div>
+    <div class="matrix-wrap">
+      {% for row in s.state %}
+      <div class="matrix-row">
+        {% for cell in row %}<div class="matrix-cell" style="width:52px;font-size:11px">{{cell}}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if data.note %}<div class="step-note">ℹ️ {{data.note}}</div>{% endif %}
+</div>
+{% endif %}
+
+{% endif %}{# end if data and result #}
+
+{# ── STEP-BY-STEP EXPLANATION ──────────────────────────────────────────────── #}
+{% if data and data.steps and result %}
+<div class="card steps-section">
+  <div class="steps-title">📋 Step-by-Step Explanation</div>
+  <div class="step-timeline">
+
+    {# CAESAR steps #}
+    {% if page == "caesar" %}
+    {% for s in data.steps %}
+    {% if not s.unchanged %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Step {{loop.index}}</div>
+        <div class="step-heading">'{{s.original}}' → '{{s.encrypted}}'</div>
+        <div class="step-body">Position {{s.original_pos}} + shift {{s.shift}} = {{s.new_pos}} → '{{s.encrypted}}'</div>
+        <div class="step-formula">{{s.original_pos}} + {{s.shift}} = {{s.new_pos}} (mod 26) → {{s.encrypted}}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# VIGENERE steps #}
+    {% elif page == "vigenere" %}
+    {% for s in data.steps %}
+    {% if not s.unchanged %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Step {{loop.index}}</div>
+        <div class="step-heading">'{{s.plain or s.cipher}}' + key '{{s.key_char}}' → '{{s.encrypted or s.decrypted}}'</div>
+        <div class="step-body">Key shift = {{s.key_shift}} ({{s.key_char}} = position {{s.key_shift}})</div>
+        <div class="step-formula">shift by {{s.key_shift}} → {{s.encrypted or s.decrypted}}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# HILL steps #}
+    {% elif page == "hill" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Block {{loop.index}}: '{{s.block}}'</div>
+        <div class="step-heading">Vector × Key Matrix mod 26</div>
+        <div class="step-body">Input vector: [{{s.vector | join(', ')}}]</div>
+        <div class="step-formula">Result: [{{s.result_vector | join(', ')}}] → '{{s.encrypted or s.decrypted}}'</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# PLAYFAIR steps #}
+    {% elif page == "playfair" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Pair {{loop.index}}</div>
+        <div class="step-heading">'{{s.pair}}' → '{{s.encrypted or s.decrypted}}'</div>
+        <div class="step-body">Rule applied: <strong>{{s.rule}}</strong></div>
+        <div class="step-formula">{{s.pair}} ──[{{s.rule}}]──▶ {{s.encrypted or s.decrypted}}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# RAIL FENCE steps #}
+    {% elif page == "railfence" %}
+    {% if data.fence %}
+    {% for rail_str in data.fence %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Rail {{loop.index}}</div>
+        <div class="step-heading">Characters on this rail</div>
+        <div class="step-formula">{{rail_str}}</div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Decryption</div>
+        <div class="step-heading">Pattern reconstruction</div>
+        <div class="step-body">Determined rail positions for each character, then filled in ciphertext characters in order.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ROW-COLUMN steps #}
+    {% elif page == "rowcolumn" %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Step 1</div>
+        <div class="step-heading">Fill grid row by row</div>
+        <div class="step-body">Key: {{data.key}} → {{data.cols}} columns, {{data.rows}} rows</div>
+      </div>
+    </div>
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Step 2</div>
+        <div class="step-heading">Sort key alphabetically to get column order</div>
+        <div class="step-formula">Column order: {% for i in data.column_order %}{{i+1}}{% if not loop.last %} → {% endif %}{% endfor %}</div>
+      </div>
+    </div>
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">Step 3</div>
+        <div class="step-heading">Read columns in sorted order</div>
+        <div class="step-formula">Result: {{result}}</div>
+      </div>
+    </div>
+
+    {# DES steps #}
+    {% elif page == "des" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-heading">{{s.description}}</div>
+        {% if s.L_in is defined %}
+        <div class="step-body">L_in: <span style="font-family:var(--mono);font-size:11px">{{s.L_in[:32]}}...</span></div>
+        <div class="step-body">R_in: <span style="font-family:var(--mono);font-size:11px">{{s.R_in[:32]}}...</span></div>
+        {% endif %}
+        {% if s.output is defined %}
+        <div class="step-formula">Output: {{s.output[:32]}}...</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if data.note %}<div class="step-note">ℹ️ {{data.note}}</div>{% endif %}
+
+    {# AES steps (text-only, matrices shown above) #}
+    {% elif page == "aes" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-body">{{s.description}}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# RSA steps #}
+    {% elif page == "rsa" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        {% if s.step is defined %}
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-formula">{{s.formula}}</div>
+        {% elif s.char is defined %}
+        <div class="step-num">Char '{{s.char}}'</div>
+        <div class="step-formula">{{s.formula}}</div>
+        {% elif s.encrypted is defined %}
+        <div class="step-num">Value {{s.encrypted}}</div>
+        <div class="step-formula">{{s.formula}} → '{{s.char}}'</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {# DH steps #}
+    {% elif page == "dh" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-heading">{{s.description}}</div>
+        {% if s.formula is defined %}<div class="step-formula">{{s.formula}}</div>{% endif %}
+        {% if s.note is defined %}<div class="step-note">💡 {{s.note}}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {# ELGAMAL steps #}
+    {% elif page == "elgamal" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        {% if s.step is defined and s.formula is defined %}
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-formula">{{s.formula}}</div>
+        {% elif s.char is defined %}
+        <div class="step-num">Char '{{s.char}}' (ASCII {{s.ascii}})</div>
+        <div class="step-formula">{{s.formula_c1}}</div>
+        <div class="step-formula" style="margin-top:4px">{{s.formula_c2}}</div>
+        {% elif s.c1 is defined %}
+        <div class="step-num">Pair ({{s.c1}}, {{s.c2}})</div>
+        <div class="step-formula">{{s.formula}} → '{{s.char}}'</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {# ECC steps #}
+    {% elif page == "ecc" %}
+    {% for s in data.steps %}
+    <div class="step-block">
+      <div class="step-dot"></div>
+      <div class="step-card">
+        <div class="step-num">{{s.step}}</div>
+        <div class="step-body">{{s.description}}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
